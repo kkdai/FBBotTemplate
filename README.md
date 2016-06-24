@@ -94,6 +94,13 @@ In Messenger application review, press "Request Premission".
 ![](images/Bot10.png)
 
 
+## How to modification your Bot Code
+
+- Download code from Heroku `git clone https://git.heroku.com/APP_ADDRESS.git`
+- Modify code on `main.go` first. especially in `MessageReceived()`.
+- Commit and push it back to heroku `git push heroku master`.
+
+
 Inspired By
 =============
 
