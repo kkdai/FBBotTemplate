@@ -3,6 +3,8 @@ FBBotTemplate: A simple Golang Facebook Bot Template
 
 [![Join the chat at https://gitter.im/kkdai/FBBotTemplate](https://badges.gitter.im/kkdai/FBBotTemplate.svg)](https://gitter.im/kkdai/FBBotTemplate?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
+[![Join the chat at https://gitter.im/kkdai/FBBotTemplate](https://badges.gitter.im/kkdai/FBBotTemplate.svg)](https://gitter.im/kkdai/FBBotTemplate?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
  [![GoDoc](https://godoc.org/github.com/kkdai/FBBotTemplate.svg?status.svg)](https://godoc.org/github.com/kkdai/FBBotTemplate.svg)  [![Build Status](https://travis-ci.org/kkdai/FBBotTemplate.svg?branch=master)](https://travis-ci.org/kkdai/FBBotTemplate.svg)
  
  [![](https://goreportcard.com/badge/github.com/kkdai/FBBotTemplate)](https://goreportcard.com/badge/github.com/kkdai/FBBotTemplate)
