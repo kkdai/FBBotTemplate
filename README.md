@@ -3,8 +3,6 @@ FBBotTemplate: A simple Golang Facebook Bot Template
 
 [![Join the chat at https://gitter.im/kkdai/FBBotTemplate](https://badges.gitter.im/kkdai/FBBotTemplate.svg)](https://gitter.im/kkdai/FBBotTemplate?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-[![Join the chat at https://gitter.im/kkdai/FBBotTemplate](https://badges.gitter.im/kkdai/FBBotTemplate.svg)](https://gitter.im/kkdai/FBBotTemplate?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-
  [![GoDoc](https://godoc.org/github.com/kkdai/FBBotTemplate.svg?status.svg)](https://godoc.org/github.com/kkdai/FBBotTemplate.svg)  [![Build Status](https://travis-ci.org/kkdai/FBBotTemplate.svg?branch=master)](https://travis-ci.org/kkdai/FBBotTemplate.svg)
  
  [![](https://goreportcard.com/badge/github.com/kkdai/FBBotTemplate)](https://goreportcard.com/badge/github.com/kkdai/FBBotTemplate)
@@ -14,77 +12,92 @@ FBBotTemplate: A simple Golang Facebook Bot Template
 Installation and Usage
 =============
 
-### 1. Create a Facebook Page
 
-Make sure you already have Facebook account, if you need use FB Bot.
-
-### 2. Just Deploy the same on Heroku
+### 1. Just Deploy the same on Heroku
 
 [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
 
-Remember your heroku, ID.
+Remember your heroku ID and app address. ex: `https://APP_ADDRESS.herokuapp.com/`
 
-<br><br>
+### 2. Create a Facebook Page
 
-### 3. Enable Fixed IP service
-
-![](images/linebotH2.png)
-Clone the heroku git to your locally, use follow command to setup ([Fixie](https://elements.heroku.com/addons/fixie)) service for free.
-
-#### There are two ways to add this "add-on" for heroku.
-
-![](images/linebotH1.png)
-
-1. Through heroku dashboard:
-	- Launch Herou [dashboard](https://dashboard.heroku.com)
-	- Go your deploy app page
-	- Go to "Resource"
-	- Go to "FIND MORE ADD-ONS" 
-	- Find "Fixie"
-
-2. Through [Heroku Toolbelt](https://toolbelt.heroku.com/)
-	- `$ heroku login`
-	- `$ heroku git:clone -a <YOUR_HEROKU_APP_ID>`
-	- `$ cd linebotkkdaitest`
-	- `$ heroku addons:create fixie:tricycle`
-
-Remember your IP information. 
+Make sure you already have Facebook account, if you need use FB Bot.
 
 
-### 4. Back to Line Bot Dashboard, setup basic API
+![](images/Bot1.png)
 
-Setup your basic account information. Here is some info you will need to know.
+### 3. Go to Facebook Developer to create App
 
-- `Callback URL`: https://{YOUR_HEROKU_SERVER_ID}.herokuapp.com:443/callback
+Create App, need select as follow:
 
-Go to `Server IP White List`, fill the IP from [Fixie](https://elements.heroku.com/addons/fixie)
+- New App type [Web App], create app
+- Add new product [Messenger]
 
-You will get following info, need fill back to Heroku.
-
-- Channel ID
-- Channel Secret
-- MID
-
-### 5. Back to Heroku again to setup environment variables
-
-- Go to dashboard
-- Go to "Setting"
-- Go to "Config Variables", add following variables:
-	- "ChannelID"
-	- "ChannelSecret"
-	- "MID"
-
-It all done.	
+![](images/Bot2.png)
 
 
+### 4. Configuration Messenger Bot
 
-### Chinese Tutorial:
+Get token from Faccebook page.
 
-如果你看得懂繁體中文，這裡有[中文的介紹](http://www.evanlin.com/create-your-line-bot-golang/) 
+![](images/Bot4.png)
+
+- Select a "Page" you own.
+- Go to "Meseenger" product.
+- It will generate `token`
+- copy it and store it.
+
+### 5. Paste Token to Heroku
+
+![](images/Bot5.png)
+
+Go to heroku dashboard, go to "Setting" -> "Config Variables".
+
+- Add "Config Vars"
+- Name -> "TOKEN"
+- Value use  `token` facebook app.
+
+### 6. Back Facebook App configuration
+
+![](images/Bot6.png)
+
+- Go to "Messenger" product
+- Go to "Setup Webhooks"
+- Fill `https://APP_ADDRESS.herokuapp.com/webhook` in callback URL.
+- Fill your `token` in "token".
+- Checked the checkbox "message_deliveres", "messages".
+
+If your configuration is correct, it will show "completed".
+
+![](images/Bot7.png)
+
+Also remember to choose correct page in this setting.
+
+
+### 7. Request basic permissions
+
+![](images/Bot8.png)
+ 
+In Messenger application review, press "Request Premission".
+ 
+- Checked the "pages_messaging".
+
+
+
+## How to testing it.
+
+![](images/Bot9.png)
+
+- Go to your spcific "page" in Facebook.
+- Press "Send Message"
+
+![](images/Bot10.png)
+
 
 Inspired By
 =============
 
+- [Provides a GO SDK for Facebook's messenger-platform](https://github.com/maciekmm/messenger-platform-go-sdk)
 - [FB: Messenger Platform/Getting Started](https://developers.facebook.com/docs/messenger-platform/quickstart/)
 - [[教學] Facebook Messenger API](http://huli.logdown.com/posts/709641-teaching-facebook-messenger-api)
 - [用Python開發Facebook Bot](https://medium.com/dualcores-studio/%E7%94%A8python%E9%96%8B%E7%99%BCfacebook-bot-26594f13f9f7#.bunklnnue)
