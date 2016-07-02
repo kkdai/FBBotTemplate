@@ -5,7 +5,7 @@ FBBotTemplate: A simple Golang Facebook Bot Template
 
  [![GoDoc](https://godoc.org/github.com/kkdai/FBBotTemplate.svg?status.svg)](https://godoc.org/github.com/kkdai/FBBotTemplate.svg)  [![Build Status](https://travis-ci.org/kkdai/FBBotTemplate.svg?branch=master)](https://travis-ci.org/kkdai/FBBotTemplate.svg)
  
- [![](https://goreportcard.com/badge/github.com/kkdai/FBBotTemplate)](https://goreportcard.com/badge/github.com/kkdai/FBBotTemplate)
+ [![](https://goreportcard.com/badge/github.com/kkdai/FBBotTemplate)](https://goreportcard.com/report/github.com/kkdai/FBBotTemplate)
 
 
 
