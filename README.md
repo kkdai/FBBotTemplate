@@ -94,9 +94,14 @@ In Messenger application review, press "Request Premission".
 ![](images/Bot10.png)
 
 
+## Video Tutorial to deploy this Bot
+
+- [How to deploy FBBot using Golang and Heroku in 5 mins](https://www.youtube.com/watch?v=Z1b1Lqh2ZaM&feature=youtu.be)
+
 ## How to modification your Bot Code
 
-- Download code from Heroku `git clone https://git.heroku.com/APP_ADDRESS.git`
+- Fork code here
+- Add remote repo `https://git.heroku.com/APP_ADDRESS.git`
 - Modify code on `main.go` first. especially in `MessageReceived()`.
 - Commit and push it back to heroku `git push heroku master`.
 
