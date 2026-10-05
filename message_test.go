@@ -114,3 +114,26 @@ func TestSendSenderAction(t *testing.T) {
 		t.Error("non-200 status should return an error")
 	}
 }
+
+func TestTextDoesNotCreateEmptyAttachment(t *testing.T) {
+	mq := MessageQuery{Recipient: Recipient{ID: "1"}}
+	if err := mq.Text("hi"); err != nil {
+		t.Fatal(err)
+	}
+	byt, err := json.Marshal(mq)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(byt), "attachment") {
+		t.Errorf("Text() must not add an attachment: %s", byt)
+	}
+
+	// Text still refuses to be combined with a template, and an image can follow text.
+	tpl := MessageQuery{Message: SendMessage{Attachment: &Attachment{Type: AttachmentTypeTemplate}}}
+	if err := tpl.Text("hi"); err == nil {
+		t.Error("Text() on a template message should fail")
+	}
+	if err := mq.Image("http://example.com/a.png"); err != nil {
+		t.Errorf("Image() after Text(): %v", err)
+	}
+}
