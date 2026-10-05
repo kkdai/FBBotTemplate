@@ -24,6 +24,13 @@ type rawMessage struct {
 }
 
 func (m *Messenger) SendMessage(mq MessageQuery) (*MessageResponse, error) {
+	if mq.MessagingType == "" {
+		if mq.Tag != "" {
+			mq.MessagingType = MessagingTypeMessageTag
+		} else {
+			mq.MessagingType = MessagingTypeResponse
+		}
+	}
 	byt, err := json.Marshal(mq)
 	if err != nil {
 		return nil, err
@@ -34,6 +41,9 @@ func (m *Messenger) SendMessage(mq MessageQuery) (*MessageResponse, error) {
 	}
 	defer resp.Body.Close()
 	read, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
 	if resp.StatusCode != http.StatusOK {
 		er := new(rawError)
 		json.Unmarshal(read, er)
@@ -69,4 +79,30 @@ func (m *Messenger) SendImageMessage(recipient string, imgUrl string) (*MessageR
 			Attachment: at,
 		},
 	})
+}
+
+// SendSenderAction shows a typing indicator or marks the user's last message as seen.
+func (m *Messenger) SendSenderAction(recipient string, action SenderAction) error {
+	byt, err := json.Marshal(struct {
+		Recipient    Recipient    `json:"recipient"`
+		SenderAction SenderAction `json:"sender_action"`
+	}{Recipient{ID: recipient}, action})
+	if err != nil {
+		return err
+	}
+	resp, err := m.doRequest("POST", GraphAPI+"/"+graphAPIVersion+"/me/messages", bytes.NewReader(byt))
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	read, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode != http.StatusOK {
+		er := new(rawError)
+		json.Unmarshal(read, er)
+		return errors.New("Error occured: " + er.Error.Message)
+	}
+	return nil
 }

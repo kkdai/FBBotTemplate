@@ -7,6 +7,8 @@ package main
 
 import (
 	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"reflect"
 	"testing"
 )
@@ -51,5 +53,23 @@ func TestGetProfile(t *testing.T) {
 	_, err = messenger.GetProfile("123")
 	if err.Error() != "Error occured: "+errorData.Error.Message {
 		t.Error("Invalid error parsing")
+	}
+}
+
+func TestGetProfileRequestedFields(t *testing.T) {
+	var gotFields string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotFields = r.URL.Query().Get("fields")
+		w.Write([]byte(`{"first_name":"John","last_name":"Smith"}`))
+	}))
+	defer server.Close()
+	GraphAPI = server.URL
+	http.DefaultClient = &http.Client{}
+
+	if _, err := (&Messenger{}).GetProfile("123"); err != nil {
+		t.Fatal(err)
+	}
+	if want := "first_name,last_name,profile_pic"; gotFields != want {
+		t.Errorf("fields = %q, want %q", gotFields, want)
 	}
 }
