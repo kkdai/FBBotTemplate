@@ -98,3 +98,34 @@ func TestHandlerPanicIsRecovered(t *testing.T) {
 		t.Fatal("handler was not called after an earlier handler panicked")
 	}
 }
+
+func TestHandlerReactionAndReferral(t *testing.T) {
+	reactions := make(chan Reaction, 1)
+	referrals := make(chan Referral, 1)
+	messenger := &Messenger{
+		Reaction: func(_ Event, _ MessageOpts, r Reaction) { reactions <- r },
+		Referral: func(_ Event, _ MessageOpts, r Referral) { referrals <- r },
+	}
+	body := `{"object":"page","entry":[{"id":"1","time":1,"messaging":[
+		{"sender":{"id":"u"},"recipient":{"id":"p"},"timestamp":1,"reaction":{"reaction":"love","emoji":"❤️","action":"react","mid":"m.1"}},
+		{"sender":{"id":"u"},"recipient":{"id":"p"},"timestamp":2,"referral":{"ref":"promo","ad_id":"42","source":"ADS","type":"OPEN_THREAD","ads_context_data":{"ad_title":"t"}}}
+	]}]}`
+	messenger.Handler(httptest.NewRecorder(), httptest.NewRequest(http.MethodPost, "/webhook", strings.NewReader(body)))
+
+	select {
+	case r := <-reactions:
+		if r.MessageID != "m.1" || r.Action != "react" || r.Reaction != "love" || r.Emoji != "❤️" {
+			t.Errorf("reaction = %+v", r)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("Reaction handler not called")
+	}
+	select {
+	case r := <-referrals:
+		if r.Ref != "promo" || r.AdID != "42" || r.Source != "ADS" || r.Type != "OPEN_THREAD" || !strings.Contains(string(r.AdsContextData), "ad_title") {
+			t.Errorf("referral = %+v", r)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("Referral handler not called")
+	}
+}

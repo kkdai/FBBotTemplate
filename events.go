@@ -36,6 +36,8 @@ type MessageEvent struct {
 		Postback *Postback        `json:"postback,omitempty"`
 		Read     *Read            `json:"read,omitempty"`
 		Optin    *Optin           `json:"optin,omitempty"`
+		Reaction *Reaction        `json:"reaction,omitempty"`
+		Referral *Referral        `json:"referral,omitempty"`
 	} `json:"messaging"`
 }
 
@@ -65,4 +67,25 @@ type Optin struct {
 // Read is sent when the user has read the messages sent before Watermark.
 type Read struct {
 	Watermark int64 `json:"watermark"`
+}
+
+// Reaction is sent when the user reacts to (or removes a reaction from) a message.
+type Reaction struct {
+	// MessageID is the mid of the message that was reacted to.
+	MessageID string `json:"mid"`
+	// Action is "react" or "unreact".
+	Action string `json:"action"`
+	// Reaction is one of smile, angry, sad, wow, love, like, dislike, other.
+	Reaction string `json:"reaction"`
+	Emoji    string `json:"emoji,omitempty"`
+}
+
+// Referral is sent when the user opens a conversation through an ad or m.me link.
+type Referral struct {
+	Source         string          `json:"source"` // "ADS" or "SHORTLINK"
+	Type           string          `json:"type"`   // "OPEN_THREAD"
+	Ref            string          `json:"ref,omitempty"`
+	RefererURI     string          `json:"referer_uri,omitempty"`
+	AdID           string          `json:"ad_id,omitempty"`
+	AdsContextData json.RawMessage `json:"ads_context_data,omitempty"`
 }
