@@ -9,9 +9,9 @@ type AttachmentType string
 
 const (
 	AttachmentTypeTemplate AttachmentType = "template"
-	AttachmentTypeImage AttachmentType = "image"
-	AttachmentTypeVideo AttachmentType = "video"
-	AttachmentTypeAudio AttachmentType = "audio"
+	AttachmentTypeImage    AttachmentType = "image"
+	AttachmentTypeVideo    AttachmentType = "video"
+	AttachmentTypeAudio    AttachmentType = "audio"
 	AttachmentTypeLocation AttachmentType = "location"
 )
 
