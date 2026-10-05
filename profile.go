@@ -7,7 +7,6 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -38,9 +37,7 @@ func (m *Messenger) GetProfile(userID string) (*Profile, error) {
 		return nil, err
 	}
 	if resp.StatusCode != http.StatusOK {
-		er := new(rawError)
-		json.Unmarshal(read, er)
-		return nil, errors.New("Error occured: " + er.Error.Message)
+		return nil, parseError(resp.StatusCode, read)
 	}
 	profile := new(Profile)
 	return profile, json.Unmarshal(read, profile)

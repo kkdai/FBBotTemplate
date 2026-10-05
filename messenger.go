@@ -31,6 +31,12 @@ type MessageReceivedHandler func(Event, MessageOpts, ReceivedMessage)
 // MessageDeliveredHandler is called when a message sent has been successfully delivered
 type MessageDeliveredHandler func(Event, MessageOpts, Delivery)
 
+// MessageReadHandler is called when the user has read the messages sent by the page
+type MessageReadHandler func(Event, MessageOpts, Read)
+
+// MessageEchoHandler is called when the page itself has sent a message (message_echoes)
+type MessageEchoHandler func(Event, MessageOpts, ReceivedMessage)
+
 // PostbackHandler is called when the postback button has been pressed by recipient
 type PostbackHandler func(Event, MessageOpts, Postback)
 
@@ -46,6 +52,8 @@ type Messenger struct {
 	PageID           string
 	MessageReceived  MessageReceivedHandler
 	MessageDelivered MessageDeliveredHandler
+	MessageRead      MessageReadHandler
+	MessageEcho      MessageEchoHandler
 	Postback         PostbackHandler
 	Authentication   AuthenticationHandler
 }
@@ -105,15 +113,25 @@ func (m *Messenger) handlePOST(rw http.ResponseWriter, req *http.Request) {
 				if m.MessageDelivered != nil {
 					go m.MessageDelivered(entry.Event, message.MessageOpts, *message.Delivery)
 				}
+			} else if message.Read != nil {
+				if m.MessageRead != nil {
+					go m.MessageRead(entry.Event, message.MessageOpts, *message.Read)
+				}
 			} else if message.Message != nil {
-				if m.MessageReceived != nil {
+				// Echoes are the page's own messages; never pass them to MessageReceived,
+				// otherwise a bot replying to every message would reply to itself forever.
+				if message.Message.IsEcho {
+					if m.MessageEcho != nil {
+						go m.MessageEcho(entry.Event, message.MessageOpts, *message.Message)
+					}
+				} else if m.MessageReceived != nil {
 					go m.MessageReceived(entry.Event, message.MessageOpts, *message.Message)
 				}
 			} else if message.Postback != nil {
 				if m.Postback != nil {
 					go m.Postback(entry.Event, message.MessageOpts, *message.Postback)
 				}
-			} else if m.Authentication != nil {
+			} else if message.Optin != nil && m.Authentication != nil {
 				go m.Authentication(entry.Event, message.MessageOpts, message.Optin)
 			}
 		}

@@ -34,7 +34,8 @@ type MessageEvent struct {
 		Message  *ReceivedMessage `json:"message,omitempty"`
 		Delivery *Delivery        `json:"delivery,omitempty"`
 		Postback *Postback        `json:"postback,omitempty"`
-		Optin    *Optin           `json:"optin,empty"`
+		Read     *Read            `json:"read,omitempty"`
+		Optin    *Optin           `json:"optin,omitempty"`
 	} `json:"messaging"`
 }
 
@@ -43,6 +44,8 @@ type ReceivedMessage struct {
 	Text        string        `json:"text,omitempty"`
 	Attachments []*Attachment `json:"attachments,omitempty"`
 	Seq         int           `json:"seq"`
+	// IsEcho is true when the message was sent by the page itself (message_echoes).
+	IsEcho bool `json:"is_echo,omitempty"`
 }
 
 type Delivery struct {
@@ -57,4 +60,9 @@ type Postback struct {
 
 type Optin struct {
 	Ref string `json:"ref"`
+}
+
+// Read is sent when the user has read the messages sent before Watermark.
+type Read struct {
+	Watermark int64 `json:"watermark"`
 }
