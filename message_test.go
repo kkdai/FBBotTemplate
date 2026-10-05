@@ -66,7 +66,7 @@ func TestSendMessageMessagingType(t *testing.T) {
 	}))
 	defer server.Close()
 	GraphAPI = server.URL
-	http.DefaultClient = &http.Client{}
+	httpClient = &http.Client{}
 	messenger := &Messenger{}
 
 	if _, err := messenger.SendSimpleMessage("1", "hi"); err != nil {
@@ -100,7 +100,7 @@ func TestSendSenderAction(t *testing.T) {
 	}))
 	defer server.Close()
 	GraphAPI = server.URL
-	http.DefaultClient = &http.Client{}
+	httpClient = &http.Client{}
 
 	if err := (&Messenger{}).SendSenderAction("1", SenderActionTypingOn); err != nil {
 		t.Fatal(err)

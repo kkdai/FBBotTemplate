@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 )
 
 func TestCheckIntegrity(t *testing.T) {
@@ -82,5 +83,44 @@ func TestHandlerRejectsLegacySHA1Signature(t *testing.T) {
 	messenger.Handler(response, request)
 	if response.Code != http.StatusBadRequest {
 		t.Errorf("status = %d, want %d", response.Code, http.StatusBadRequest)
+	}
+}
+
+func TestDoRequestAuth(t *testing.T) {
+	var gotAuth, gotQueryToken string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotAuth = r.Header.Get("Authorization")
+		gotQueryToken = r.URL.Query().Get("access_token")
+		w.Write([]byte(`{}`))
+	}))
+	defer server.Close()
+
+	resp, err := (&Messenger{AccessToken: "tok", HTTPClient: &http.Client{}}).doRequest("GET", server.URL, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+	if gotAuth != "Bearer tok" {
+		t.Errorf("Authorization = %q, want %q", gotAuth, "Bearer tok")
+	}
+	if gotQueryToken != "" {
+		t.Errorf("access_token must not be in the query string, got %q", gotQueryToken)
+	}
+}
+
+func TestDoRequestTimeout(t *testing.T) {
+	release := make(chan struct{})
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		<-release
+	}))
+	defer server.Close()
+	defer close(release)
+
+	m := &Messenger{HTTPClient: &http.Client{Timeout: 50 * time.Millisecond}}
+	if _, err := m.doRequest("GET", server.URL, nil); err == nil {
+		t.Error("expected a timeout error")
+	}
+	if httpTimeout <= 0 {
+		t.Error("default client must have a timeout")
 	}
 }
