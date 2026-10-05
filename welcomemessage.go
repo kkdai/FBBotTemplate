@@ -49,7 +49,7 @@ func (m *Messenger) SetWelcomeMessage(message *SendMessage) error {
 	if err != nil {
 		return err
 	}
-	resp, err := m.doRequest("POST", fmt.Sprintf(GraphAPI+"/v2.6/%s/thread_settings", m.PageID), bytes.NewReader(byt))
+	resp, err := m.doRequest("POST", fmt.Sprintf(GraphAPI+"/%s/%s/thread_settings", graphAPIVersion, m.PageID), bytes.NewReader(byt))
 	if err != nil {
 		return err
 	}

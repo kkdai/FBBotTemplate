@@ -9,7 +9,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"io/ioutil"
+	"io"
 	"net/http"
 )
 
@@ -28,12 +28,12 @@ func (m *Messenger) SendMessage(mq MessageQuery) (*MessageResponse, error) {
 	if err != nil {
 		return nil, err
 	}
-	resp, err := m.doRequest("POST", GraphAPI+"/v2.6/me/messages", bytes.NewReader(byt))
+	resp, err := m.doRequest("POST", GraphAPI+"/"+graphAPIVersion+"/me/messages", bytes.NewReader(byt))
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	read, err := ioutil.ReadAll(resp.Body)
+	read, err := io.ReadAll(resp.Body)
 	if resp.StatusCode != http.StatusOK {
 		er := new(rawError)
 		json.Unmarshal(read, er)

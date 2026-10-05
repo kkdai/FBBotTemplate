@@ -9,7 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 )
 
@@ -26,12 +26,12 @@ type Profile struct {
 // GetProfile fetches the recipient's profile from facebook platform
 // Non empty UserID has to be specified in order to receive the information
 func (m *Messenger) GetProfile(userID string) (*Profile, error) {
-	resp, err := m.doRequest("GET", fmt.Sprintf(GraphAPI+"/v2.6/%s?fields=first_name,last_name,profile_pic,locale,timezone,gender", userID), nil)
+	resp, err := m.doRequest("GET", fmt.Sprintf(GraphAPI+"/%s/%s?fields=first_name,last_name,profile_pic,locale,timezone,gender", graphAPIVersion, userID), nil)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	read, err := ioutil.ReadAll(resp.Body)
+	read, err := io.ReadAll(resp.Body)
 	if resp.StatusCode != http.StatusOK {
 		er := new(rawError)
 		json.Unmarshal(read, er)

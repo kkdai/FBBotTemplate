@@ -8,13 +8,17 @@ package main
 import (
 	"crypto/hmac"
 	"crypto/sha1"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
-	"fmt"
+	"hash"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
 )
+
+const graphAPIVersion = "v24.0"
 
 var (
 	//GraphAPI specifies host used for API requests
@@ -70,7 +74,7 @@ func (m *Messenger) Handler(rw http.ResponseWriter, req *http.Request) {
 }
 
 func (m *Messenger) handlePOST(rw http.ResponseWriter, req *http.Request) {
-	read, err := ioutil.ReadAll(req.Body)
+	read, err := io.ReadAll(req.Body)
 
 	if err != nil {
 		rw.WriteHeader(http.StatusBadRequest)
@@ -78,7 +82,11 @@ func (m *Messenger) handlePOST(rw http.ResponseWriter, req *http.Request) {
 	}
 	//Message integrity check
 	if m.AppSecret != "" {
-		if req.Header.Get("x-hub-signature") == "" || !checkIntegrity(m.AppSecret, read, req.Header.Get("x-hub-signature")[5:]) {
+		signature := req.Header.Get("x-hub-signature-256")
+		if signature == "" {
+			signature = req.Header.Get("x-hub-signature")
+		}
+		if !checkIntegrity(m.AppSecret, read, signature) {
 			rw.WriteHeader(http.StatusBadRequest)
 			return
 		}
@@ -114,13 +122,30 @@ func (m *Messenger) handlePOST(rw http.ResponseWriter, req *http.Request) {
 	rw.Write([]byte(`{"status":"ok"}`))
 }
 
-func checkIntegrity(appSecret string, bytes []byte, expectedSignature string) bool {
-	mac := hmac.New(sha1.New, []byte(appSecret))
-	mac.Write(bytes)
-	if fmt.Sprintf("%x", mac.Sum(nil)) != expectedSignature {
+func checkIntegrity(appSecret string, body []byte, signature string) bool {
+	algorithm, expectedSignature, found := strings.Cut(signature, "=")
+	if !found {
 		return false
 	}
-	return true
+
+	expected, err := hex.DecodeString(expectedSignature)
+	if err != nil {
+		return false
+	}
+
+	var hash func() hash.Hash
+	switch algorithm {
+	case "sha1":
+		hash = sha1.New
+	case "sha256":
+		hash = sha256.New
+	default:
+		return false
+	}
+
+	mac := hmac.New(hash, []byte(appSecret))
+	_, _ = mac.Write(body)
+	return hmac.Equal(mac.Sum(nil), expected)
 }
 
 func (m *Messenger) doRequest(method string, url string, body io.Reader) (*http.Response, error) {
