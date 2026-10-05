@@ -33,8 +33,34 @@ const (
 	NotificationTypeNoPush NotificationType = "NO_PUSH"
 )
 
+// MessagingType tells Facebook why the message is being sent. It is required by the Send API.
+type MessagingType string
+
+const (
+	// MessagingTypeResponse is for replying to a message received from the user.
+	MessagingTypeResponse MessagingType = "RESPONSE"
+	// MessagingTypeUpdate is for proactive messages sent inside the 24-hour standard messaging window.
+	MessagingTypeUpdate MessagingType = "UPDATE"
+	// MessagingTypeMessageTag is for non-promotional messages sent outside the 24-hour window.
+	// It requires MessageQuery.Tag. Note that the CONFIRMED_EVENT_UPDATE, ACCOUNT_UPDATE and
+	// POST_PURCHASE_UPDATE tags are rejected by Facebook since 2026-04-27.
+	MessagingTypeMessageTag MessagingType = "MESSAGE_TAG"
+)
+
+// SenderAction is a typing indicator or read receipt shown to the user.
+type SenderAction string
+
+const (
+	SenderActionMarkSeen  SenderAction = "mark_seen"
+	SenderActionTypingOn  SenderAction = "typing_on"
+	SenderActionTypingOff SenderAction = "typing_off"
+)
+
 type MessageQuery struct {
-	Recipient        Recipient        `json:"recipient"`
+	Recipient Recipient `json:"recipient"`
+	// MessagingType defaults to RESPONSE (or MESSAGE_TAG when Tag is set) if left empty.
+	MessagingType    MessagingType    `json:"messaging_type,omitempty"`
+	Tag              string           `json:"tag,omitempty"`
 	Message          SendMessage      `json:"message"`
 	NotificationType NotificationType `json:"notification_type,omitempty"`
 }
