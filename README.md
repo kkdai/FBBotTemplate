@@ -60,6 +60,8 @@ Go to heroku dashboard, go to "Setting" -> "Config Variables".
 
 The server refuses to start if any of these three variables is missing.
 
+Optional: `GRAPH_API_VERSION` (default `v26.0`) selects the Graph API version, e.g. `v25.0`.
+
 ### 6. Back Facebook App configuration
 
 ![](images/Bot6.png)

@@ -17,7 +17,9 @@ import (
 	"strings"
 )
 
-const graphAPIVersion = "v24.0"
+// graphAPIVersion is the Graph API version used for all requests.
+// main.go lets it be overridden with the GRAPH_API_VERSION environment variable.
+var graphAPIVersion = "v26.0"
 
 var (
 	//GraphAPI specifies host used for API requests
