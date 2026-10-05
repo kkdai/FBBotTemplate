@@ -32,7 +32,7 @@ func main() {
 	log.Fatal(http.ListenAndServe(":"+port, nil))
 }
 
-//MessageReceived :Callback to handle when message received.
+// MessageReceived :Callback to handle when message received.
 func MessageReceived(event Event, opts MessageOpts, msg ReceivedMessage) {
 	// log.Println("event:", event, " opt:", opts, " msg:", msg)
 	profile, err := mess.GetProfile(opts.Sender.ID)
