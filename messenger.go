@@ -7,11 +7,10 @@ package main
 
 import (
 	"crypto/hmac"
-	"crypto/sha1"
 	"crypto/sha256"
+	"crypto/subtle"
 	"encoding/hex"
 	"encoding/json"
-	"hash"
 	"io"
 	"log"
 	"net/http"
@@ -56,15 +55,13 @@ func (m *Messenger) Handler(rw http.ResponseWriter, req *http.Request) {
 	if req.Method == "GET" {
 		query := req.URL.Query()
 		verifyToken := query.Get("hub.verify_token")
-		log.Println("Handle", req.Method, " token=", verifyToken, " verify_token=", m.VerifyToken)
-		log.Println("Equal:", verifyToken == m.VerifyToken)
-		if verifyToken != m.VerifyToken {
+		if m.VerifyToken == "" || query.Get("hub.mode") != "subscribe" ||
+			subtle.ConstantTimeCompare([]byte(verifyToken), []byte(m.VerifyToken)) != 1 {
 			rw.WriteHeader(http.StatusUnauthorized)
-			log.Println("StatusUnauthorized")
+			log.Println("Webhook verification failed")
 			return
 		}
 		rw.WriteHeader(http.StatusOK)
-		log.Println("RET:", query.Get("hub.challenge"))
 		rw.Write([]byte(query.Get("hub.challenge")))
 	} else if req.Method == "POST" {
 		m.handlePOST(rw, req)
@@ -83,9 +80,6 @@ func (m *Messenger) handlePOST(rw http.ResponseWriter, req *http.Request) {
 	//Message integrity check
 	if m.AppSecret != "" {
 		signature := req.Header.Get("x-hub-signature-256")
-		if signature == "" {
-			signature = req.Header.Get("x-hub-signature")
-		}
 		if !checkIntegrity(m.AppSecret, read, signature) {
 			rw.WriteHeader(http.StatusBadRequest)
 			return
@@ -124,7 +118,7 @@ func (m *Messenger) handlePOST(rw http.ResponseWriter, req *http.Request) {
 
 func checkIntegrity(appSecret string, body []byte, signature string) bool {
 	algorithm, expectedSignature, found := strings.Cut(signature, "=")
-	if !found {
+	if !found || algorithm != "sha256" {
 		return false
 	}
 
@@ -133,17 +127,7 @@ func checkIntegrity(appSecret string, body []byte, signature string) bool {
 		return false
 	}
 
-	var hash func() hash.Hash
-	switch algorithm {
-	case "sha1":
-		hash = sha1.New
-	case "sha256":
-		hash = sha256.New
-	default:
-		return false
-	}
-
-	mac := hmac.New(hash, []byte(appSecret))
+	mac := hmac.New(sha256.New, []byte(appSecret))
 	_, _ = mac.Write(body)
 	return hmac.Equal(mac.Sum(nil), expected)
 }

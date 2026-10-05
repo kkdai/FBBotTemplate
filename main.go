@@ -23,10 +23,22 @@ var mess = &Messenger{}
 
 func main() {
 	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	mess.VerifyToken = os.Getenv("VERIFY_TOKEN")
+	mess.AccessToken = os.Getenv("PAGE_ACCESS_TOKEN")
+	mess.AppSecret = os.Getenv("APP_SECRET")
+	for name, value := range map[string]string{
+		"VERIFY_TOKEN":      mess.VerifyToken,
+		"PAGE_ACCESS_TOKEN": mess.AccessToken,
+		"APP_SECRET":        mess.AppSecret,
+	} {
+		if value == "" {
+			log.Fatalf("environment variable %s is required", name)
+		}
+	}
 	log.Println("Server start in port:", port)
-	mess.VerifyToken = os.Getenv("TOKEN")
-	mess.AccessToken = os.Getenv("TOKEN")
-	log.Println("Bot start in token:", mess.VerifyToken)
 	mess.MessageReceived = MessageReceived
 	http.HandleFunc("/webhook", mess.Handler)
 	log.Fatal(http.ListenAndServe(":"+port, nil))

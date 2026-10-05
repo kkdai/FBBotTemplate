@@ -9,62 +9,73 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"fmt"
+	"io"
 	"net/http"
 )
 
-type ctaBase struct {
-	SettingType string `json:"setting_type"`
-	ThreadState string `json:"thread_state"`
+type getStarted struct {
+	Payload string `json:"payload"`
 }
 
-var welcomeMessage = ctaBase{
-	SettingType: "call_to_actions",
-	ThreadState: "new_thread",
+type greeting struct {
+	Locale string `json:"locale"`
+	Text   string `json:"text"`
 }
 
-type ctaMessage struct {
-	Message *SendMessage `json:"message"`
-}
-
-type cta struct {
-	ctaBase
-	CallToActions []ctaMessage `json:"call_to_actions"`
+type messengerProfile struct {
+	GetStarted *getStarted `json:"get_started,omitempty"`
+	Greeting   []greeting  `json:"greeting,omitempty"`
 }
 
 type result struct {
 	Result string `json:"result"`
 }
 
-// SetWelcomeMessage sets the message that is sent first. If message is nil or empty the welcome message is not sent.
-func (m *Messenger) SetWelcomeMessage(message *SendMessage) error {
-	cta := &cta{
-		ctaBase:       welcomeMessage,
-		CallToActions: []ctaMessage{ctaMessage{Message: message}},
+// SetGetStartedButton sets the "Get Started" button. The payload is delivered
+// to the Postback handler when the user taps it.
+func (m *Messenger) SetGetStartedButton(payload string) error {
+	if payload == "" {
+		return errors.New("payload is empty")
 	}
-	if m.PageID == "" {
-		return errors.New("PageID is empty")
+	return m.setMessengerProfile(&messengerProfile{GetStarted: &getStarted{Payload: payload}})
+}
+
+// SetGreeting sets the greeting text shown before the user starts a conversation.
+// The "default" locale is used, and text is limited to 160 characters by Facebook.
+func (m *Messenger) SetGreeting(text string) error {
+	if text == "" {
+		return errors.New("text is empty")
 	}
-	byt, err := json.Marshal(cta)
+	return m.setMessengerProfile(&messengerProfile{Greeting: []greeting{{Locale: "default", Text: text}}})
+}
+
+// setMessengerProfile updates the page's Messenger Profile (POST /me/messenger_profile).
+// It replaces the deprecated thread_settings API.
+func (m *Messenger) setMessengerProfile(profile *messengerProfile) error {
+	byt, err := json.Marshal(profile)
 	if err != nil {
 		return err
 	}
-	resp, err := m.doRequest("POST", fmt.Sprintf(GraphAPI+"/%s/%s/thread_settings", graphAPIVersion, m.PageID), bytes.NewReader(byt))
+	resp, err := m.doRequest("POST", GraphAPI+"/"+graphAPIVersion+"/me/messenger_profile", bytes.NewReader(byt))
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("Invalid status code %d", resp.StatusCode)
-	}
-	decoder := json.NewDecoder(resp.Body)
-	result := &result{}
-	err = decoder.Decode(result)
+	read, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}
-	if result.Result != "Successfully added new_thread's CTAs" {
-		return errors.New("Something went wrong with setting thread's welcome message, facebook error: " + result.Result)
+	if resp.StatusCode != http.StatusOK {
+		er := new(rawError)
+		json.Unmarshal(read, er)
+		return errors.New("Error occured: " + er.Error.Message)
+	}
+	res := &result{}
+	if err := json.Unmarshal(read, res); err != nil {
+		return err
+	}
+	if res.Result != "success" {
+		return errors.New("Something went wrong with setting messenger profile, facebook result: " + res.Result)
 	}
 	return nil
 }

@@ -39,3 +39,48 @@ func TestHandlerRejectsMalformedSignature(t *testing.T) {
 		t.Errorf("status = %d, want %d", response.Code, http.StatusBadRequest)
 	}
 }
+
+func TestHandlerVerification(t *testing.T) {
+	messenger := &Messenger{VerifyToken: "secret"}
+	tests := []struct {
+		name     string
+		query    string
+		wantCode int
+		wantBody string
+	}{
+		{"valid", "hub.mode=subscribe&hub.verify_token=secret&hub.challenge=abc", http.StatusOK, "abc"},
+		{"wrong token", "hub.mode=subscribe&hub.verify_token=nope&hub.challenge=abc", http.StatusUnauthorized, ""},
+		{"wrong mode", "hub.mode=unsubscribe&hub.verify_token=secret&hub.challenge=abc", http.StatusUnauthorized, ""},
+		{"missing token", "hub.mode=subscribe&hub.challenge=abc", http.StatusUnauthorized, ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			request := httptest.NewRequest(http.MethodGet, "/webhook?"+tt.query, nil)
+			response := httptest.NewRecorder()
+			messenger.Handler(response, request)
+			if response.Code != tt.wantCode || response.Body.String() != tt.wantBody {
+				t.Errorf("got %d %q, want %d %q", response.Code, response.Body.String(), tt.wantCode, tt.wantBody)
+			}
+		})
+	}
+
+	// An unset VerifyToken must never match an empty hub.verify_token.
+	empty := &Messenger{}
+	request := httptest.NewRequest(http.MethodGet, "/webhook?hub.mode=subscribe&hub.verify_token=&hub.challenge=abc", nil)
+	response := httptest.NewRecorder()
+	empty.Handler(response, request)
+	if response.Code != http.StatusUnauthorized {
+		t.Errorf("empty VerifyToken: status = %d, want %d", response.Code, http.StatusUnauthorized)
+	}
+}
+
+func TestHandlerRejectsLegacySHA1Signature(t *testing.T) {
+	messenger := &Messenger{AppSecret: "secret"}
+	request := httptest.NewRequest(http.MethodPost, "/webhook", nil)
+	request.Header.Set("x-hub-signature", "sha1=da39a3ee5e6b4b0d3255bfef95601890afd80709")
+	response := httptest.NewRecorder()
+	messenger.Handler(response, request)
+	if response.Code != http.StatusBadRequest {
+		t.Errorf("status = %d, want %d", response.Code, http.StatusBadRequest)
+	}
+}

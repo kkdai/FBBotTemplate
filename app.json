@@ -2,7 +2,18 @@
   "name": "FBBot",
   "description": "FB Bot Template",
   "repository": "https://github.com/kkdai/FBBotTemplate",
-  "keywords": ["Line", "go", "static"],
+  "keywords": ["facebook", "messenger", "go"],
+  "env": {
+    "VERIFY_TOKEN": {
+      "description": "A string you choose; enter the same value as the Verify Token when configuring the webhook in Facebook."
+    },
+    "PAGE_ACCESS_TOKEN": {
+      "description": "Page access token generated in the Messenger product settings."
+    },
+    "APP_SECRET": {
+      "description": "App secret (App Settings > Basic), used to verify webhook signatures."
+    }
+  },
   "buildpacks": [
     {
       "url": "https://github.com/kr/heroku-buildpack-go.git"
