@@ -22,7 +22,7 @@ func TestMessengerProfile(t *testing.T) {
 	}))
 	defer server.Close()
 	GraphAPI = server.URL
-	http.DefaultClient = &http.Client{}
+	httpClient = &http.Client{}
 	messenger := &Messenger{AccessToken: "token"}
 
 	if err := messenger.SetGetStartedButton("START"); err != nil {

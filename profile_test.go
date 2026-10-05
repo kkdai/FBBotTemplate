@@ -64,7 +64,7 @@ func TestGetProfileRequestedFields(t *testing.T) {
 	}))
 	defer server.Close()
 	GraphAPI = server.URL
-	http.DefaultClient = &http.Client{}
+	httpClient = &http.Client{}
 
 	if _, err := (&Messenger{}).GetProfile("123"); err != nil {
 		t.Fatal(err)

@@ -21,7 +21,7 @@ func (t staticTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 }
 
 func setClient(statusCode int, body []byte) {
-	http.DefaultClient = &http.Client{
+	httpClient = &http.Client{
 		Transport: staticTransport{
 			statusCode: statusCode,
 			body:       body,

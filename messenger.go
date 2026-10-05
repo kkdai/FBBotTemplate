@@ -15,6 +15,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 )
 
 const graphAPIVersion = "v24.0"
@@ -45,10 +46,12 @@ type AuthenticationHandler func(Event, MessageOpts, *Optin)
 // Messenger is the main service which handles all callbacks from facebook
 // Events are delivered to handlers if they are specified
 type Messenger struct {
-	VerifyToken      string
-	AppSecret        string
-	AccessToken      string
-	PageID           string
+	VerifyToken string
+	AppSecret   string
+	AccessToken string
+	PageID      string
+	// HTTPClient is used for Graph API calls. If nil, a client with a 10 second timeout is used.
+	HTTPClient       *http.Client
 	MessageReceived  MessageReceivedHandler
 	MessageDelivered MessageDeliveredHandler
 	MessageRead      MessageReadHandler
@@ -150,14 +153,23 @@ func checkIntegrity(appSecret string, body []byte, signature string) bool {
 	return hmac.Equal(mac.Sum(nil), expected)
 }
 
+// httpClient is used when Messenger.HTTPClient is nil. Unlike http.DefaultClient it has a timeout,
+// so a stalled Graph API call can't hang a handler goroutine forever.
+const httpTimeout = 10 * time.Second
+
+var httpClient = &http.Client{Timeout: httpTimeout}
+
 func (m *Messenger) doRequest(method string, url string, body io.Reader) (*http.Response, error) {
 	req, err := http.NewRequest(method, url, body)
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	query := req.URL.Query()
-	query.Set("access_token", m.AccessToken)
-	req.URL.RawQuery = query.Encode()
-	return http.DefaultClient.Do(req)
+	// The token goes in a header rather than the query string so it can't leak via URL logs.
+	req.Header.Set("Authorization", "Bearer "+m.AccessToken)
+	client := m.HTTPClient
+	if client == nil {
+		client = httpClient
+	}
+	return client.Do(req)
 }
