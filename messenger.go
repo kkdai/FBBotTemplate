@@ -41,6 +41,12 @@ type MessageReadHandler func(Event, MessageOpts, Read)
 // MessageEchoHandler is called when the page itself has sent a message (message_echoes)
 type MessageEchoHandler func(Event, MessageOpts, ReceivedMessage)
 
+// ReactionHandler is called when the user reacts to a message
+type ReactionHandler func(Event, MessageOpts, Reaction)
+
+// ReferralHandler is called when the user opens a conversation through an ad or m.me link
+type ReferralHandler func(Event, MessageOpts, Referral)
+
 // PostbackHandler is called when the postback button has been pressed by recipient
 type PostbackHandler func(Event, MessageOpts, Postback)
 
@@ -60,6 +66,8 @@ type Messenger struct {
 	MessageDelivered MessageDeliveredHandler
 	MessageRead      MessageReadHandler
 	MessageEcho      MessageEchoHandler
+	Reaction         ReactionHandler
+	Referral         ReferralHandler
 	Postback         PostbackHandler
 	Authentication   AuthenticationHandler
 }
@@ -127,6 +135,14 @@ func (m *Messenger) handlePOST(rw http.ResponseWriter, req *http.Request) {
 					}
 				} else if m.MessageReceived != nil {
 					m.dispatch(func() { m.MessageReceived(entry.Event, message.MessageOpts, *message.Message) })
+				}
+			} else if message.Reaction != nil {
+				if m.Reaction != nil {
+					m.dispatch(func() { m.Reaction(entry.Event, message.MessageOpts, *message.Reaction) })
+				}
+			} else if message.Referral != nil {
+				if m.Referral != nil {
+					m.dispatch(func() { m.Referral(entry.Event, message.MessageOpts, *message.Referral) })
 				}
 			} else if message.Postback != nil {
 				if m.Postback != nil {
