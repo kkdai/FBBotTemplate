@@ -73,3 +73,28 @@ func TestHandlerDispatch(t *testing.T) {
 		t.Errorf("seen = %v, want one each of received/echo/read", seen)
 	}
 }
+
+func TestHandlerPanicIsRecovered(t *testing.T) {
+	done := make(chan struct{})
+	messenger := &Messenger{
+		MessageReceived: func(_ Event, _ MessageOpts, msg ReceivedMessage) {
+			if msg.Text == "boom" {
+				panic("handler failure")
+			}
+			close(done)
+		},
+	}
+	post := func(text string) {
+		body := `{"object":"page","entry":[{"id":"1","time":1,"messaging":[{"sender":{"id":"u"},"message":{"mid":"a","text":"` + text + `"}}]}]}`
+		messenger.Handler(httptest.NewRecorder(), httptest.NewRequest(http.MethodPost, "/webhook", strings.NewReader(body)))
+	}
+
+	post("boom") // would crash the test binary without recovery
+	time.Sleep(50 * time.Millisecond)
+	post("ok")
+	select {
+	case <-done:
+	case <-time.After(time.Second):
+		t.Fatal("handler was not called after an earlier handler panicked")
+	}
+}

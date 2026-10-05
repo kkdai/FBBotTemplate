@@ -15,6 +15,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"runtime/debug"
 	"strings"
 	"time"
 )
@@ -111,33 +112,46 @@ func (m *Messenger) handlePOST(rw http.ResponseWriter, req *http.Request) {
 		for _, message := range entry.Messaging {
 			if message.Delivery != nil {
 				if m.MessageDelivered != nil {
-					go m.MessageDelivered(entry.Event, message.MessageOpts, *message.Delivery)
+					m.dispatch(func() { m.MessageDelivered(entry.Event, message.MessageOpts, *message.Delivery) })
 				}
 			} else if message.Read != nil {
 				if m.MessageRead != nil {
-					go m.MessageRead(entry.Event, message.MessageOpts, *message.Read)
+					m.dispatch(func() { m.MessageRead(entry.Event, message.MessageOpts, *message.Read) })
 				}
 			} else if message.Message != nil {
 				// Echoes are the page's own messages; never pass them to MessageReceived,
 				// otherwise a bot replying to every message would reply to itself forever.
 				if message.Message.IsEcho {
 					if m.MessageEcho != nil {
-						go m.MessageEcho(entry.Event, message.MessageOpts, *message.Message)
+						m.dispatch(func() { m.MessageEcho(entry.Event, message.MessageOpts, *message.Message) })
 					}
 				} else if m.MessageReceived != nil {
-					go m.MessageReceived(entry.Event, message.MessageOpts, *message.Message)
+					m.dispatch(func() { m.MessageReceived(entry.Event, message.MessageOpts, *message.Message) })
 				}
 			} else if message.Postback != nil {
 				if m.Postback != nil {
-					go m.Postback(entry.Event, message.MessageOpts, *message.Postback)
+					m.dispatch(func() { m.Postback(entry.Event, message.MessageOpts, *message.Postback) })
 				}
 			} else if message.Optin != nil && m.Authentication != nil {
-				go m.Authentication(entry.Event, message.MessageOpts, message.Optin)
+				m.dispatch(func() { m.Authentication(entry.Event, message.MessageOpts, message.Optin) })
 			}
 		}
 	}
 	rw.WriteHeader(http.StatusOK)
 	rw.Write([]byte(`{"status":"ok"}`))
+}
+
+// dispatch runs a user handler in its own goroutine. A panic in the handler is logged and
+// recovered; otherwise it would crash the whole server.
+func (m *Messenger) dispatch(handler func()) {
+	go func() {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Printf("panic in webhook handler: %v\n%s", r, debug.Stack())
+			}
+		}()
+		handler()
+	}()
 }
 
 func checkIntegrity(appSecret string, body []byte, signature string) bool {
