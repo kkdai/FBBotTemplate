@@ -6,6 +6,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -25,9 +26,15 @@ type Profile struct {
 }
 
 // GetProfile fetches the recipient's profile from facebook platform
-// Non empty UserID has to be specified in order to receive the information
+// Non empty UserID has to be specified in order to receive the information.
+// It uses context.Background(); see GetProfileContext.
 func (m *Messenger) GetProfile(userID string) (*Profile, error) {
-	resp, err := m.doRequest("GET", fmt.Sprintf(GraphAPI+"/%s/%s?fields=first_name,last_name,profile_pic", graphAPIVersion, userID), nil)
+	return m.GetProfileContext(context.Background(), userID)
+}
+
+// GetProfileContext is GetProfile with a cancellable request.
+func (m *Messenger) GetProfileContext(ctx context.Context, userID string) (*Profile, error) {
+	resp, err := m.doRequest(ctx, "GET", fmt.Sprintf(GraphAPI+"/%s/%s?fields=first_name,last_name,profile_pic", graphAPIVersion, userID), nil)
 	if err != nil {
 		return nil, err
 	}

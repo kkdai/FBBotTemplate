@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
@@ -95,7 +96,7 @@ func TestDoRequestAuth(t *testing.T) {
 	}))
 	defer server.Close()
 
-	resp, err := (&Messenger{AccessToken: "tok", HTTPClient: &http.Client{}}).doRequest("GET", server.URL, nil)
+	resp, err := (&Messenger{AccessToken: "tok", HTTPClient: &http.Client{}}).doRequest(context.Background(), "GET", server.URL, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -117,7 +118,7 @@ func TestDoRequestTimeout(t *testing.T) {
 	defer close(release)
 
 	m := &Messenger{HTTPClient: &http.Client{Timeout: 50 * time.Millisecond}}
-	if _, err := m.doRequest("GET", server.URL, nil); err == nil {
+	if _, err := m.doRequest(context.Background(), "GET", server.URL, nil); err == nil {
 		t.Error("expected a timeout error")
 	}
 	if httpTimeout <= 0 {

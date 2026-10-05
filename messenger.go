@@ -6,6 +6,7 @@
 package main
 
 import (
+	"context"
 	"crypto/hmac"
 	"crypto/sha256"
 	"crypto/subtle"
@@ -161,8 +162,8 @@ const httpTimeout = 10 * time.Second
 
 var httpClient = &http.Client{Timeout: httpTimeout}
 
-func (m *Messenger) doRequest(method string, url string, body io.Reader) (*http.Response, error) {
-	req, err := http.NewRequest(method, url, body)
+func (m *Messenger) doRequest(ctx context.Context, method string, url string, body io.Reader) (*http.Response, error) {
+	req, err := http.NewRequestWithContext(ctx, method, url, body)
 	if err != nil {
 		return nil, err
 	}
