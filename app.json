@@ -20,9 +20,6 @@
   },
   "buildpacks": [
     {
-      "url": "https://github.com/kr/heroku-buildpack-go.git"
-    },
-    {
       "url": "heroku/go"
     }
   ]
