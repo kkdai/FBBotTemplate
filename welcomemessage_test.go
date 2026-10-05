@@ -6,47 +6,61 @@
 package main
 
 import (
-	"encoding/json"
+	"io"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 )
 
-func TestSetWelcomeMessage(t *testing.T) {
-	//Avoid HTTPS in tests
+func TestMessengerProfile(t *testing.T) {
+	var gotPath, gotBody string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotPath = r.URL.Path
+		b, _ := io.ReadAll(r.Body)
+		gotBody = string(b)
+		w.Write([]byte(`{"result":"success"}`))
+	}))
+	defer server.Close()
+	GraphAPI = server.URL
+	http.DefaultClient = &http.Client{}
+	messenger := &Messenger{AccessToken: "token"}
+
+	if err := messenger.SetGetStartedButton("START"); err != nil {
+		t.Fatal(err)
+	}
+	if want := "/" + graphAPIVersion + "/me/messenger_profile"; gotPath != want {
+		t.Errorf("path = %q, want %q", gotPath, want)
+	}
+	if want := `{"get_started":{"payload":"START"}}`; gotBody != want {
+		t.Errorf("body = %s, want %s", gotBody, want)
+	}
+
+	if err := messenger.SetGreeting("hi"); err != nil {
+		t.Fatal(err)
+	}
+	if want := `{"greeting":[{"locale":"default","text":"hi"}]}`; gotBody != want {
+		t.Errorf("body = %s, want %s", gotBody, want)
+	}
+}
+
+func TestMessengerProfileErrors(t *testing.T) {
 	GraphAPI = "http://example.com"
-	messenger := &Messenger{
-		PageID: "foo",
+	messenger := &Messenger{}
+
+	setClient(200, []byte(`{"result":"error!"}`))
+	if err := messenger.SetGreeting("hi"); err == nil {
+		t.Error("unexpected result should return an error")
 	}
 
-	mockData := &result{
-		Result: "Successfully added new_thread's CTAs",
+	setClient(400, []byte(`{"error":{"message":"bad"}}`))
+	if err := messenger.SetGetStartedButton("START"); err == nil {
+		t.Error("non-200 status should return an error")
 	}
 
-	body, err := json.Marshal(mockData)
-	if err != nil {
-		t.Error(err)
+	if err := messenger.SetGetStartedButton(""); err == nil {
+		t.Error("empty payload should return an error")
 	}
-
-	setClient(200, body)
-
-	err = messenger.SetWelcomeMessage(&SendMessage{
-		Text: "hello!",
-	})
-	if err != nil {
-		t.Error(err)
-	}
-
-	mockData = &result{
-		Result: "error!",
-	}
-
-	body, err = json.Marshal(mockData)
-	if err != nil {
-		t.Error(err)
-	}
-	setClient(200, body)
-
-	err = messenger.SetWelcomeMessage(&SendMessage{})
-	if err == nil {
-		t.Error("Error should have been thrown!")
+	if err := messenger.SetGreeting(""); err == nil {
+		t.Error("empty text should return an error")
 	}
 }
