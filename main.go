@@ -17,7 +17,10 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"regexp"
 )
+
+var graphVersionPattern = regexp.MustCompile(`^v\d+\.\d+$`)
 
 var mess = &Messenger{}
 
@@ -38,7 +41,13 @@ func main() {
 			log.Fatalf("environment variable %s is required", name)
 		}
 	}
-	log.Println("Server start in port:", port)
+	if v := os.Getenv("GRAPH_API_VERSION"); v != "" {
+		if !graphVersionPattern.MatchString(v) {
+			log.Fatalf("GRAPH_API_VERSION %q is invalid, expected something like v26.0", v)
+		}
+		graphAPIVersion = v
+	}
+	log.Println("Server start in port:", port, "graph api:", graphAPIVersion)
 	mess.MessageReceived = MessageReceived
 	http.HandleFunc("/webhook", mess.Handler)
 	log.Fatal(http.ListenAndServe(":"+port, nil))

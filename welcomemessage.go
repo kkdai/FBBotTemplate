@@ -66,9 +66,7 @@ func (m *Messenger) setMessengerProfile(profile *messengerProfile) error {
 		return err
 	}
 	if resp.StatusCode != http.StatusOK {
-		er := new(rawError)
-		json.Unmarshal(read, er)
-		return errors.New("Error occured: " + er.Error.Message)
+		return parseError(resp.StatusCode, read)
 	}
 	res := &result{}
 	if err := json.Unmarshal(read, res); err != nil {
