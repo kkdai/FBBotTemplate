@@ -8,7 +8,6 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"io"
 	"net/http"
 )
@@ -45,9 +44,7 @@ func (m *Messenger) SendMessage(mq MessageQuery) (*MessageResponse, error) {
 		return nil, err
 	}
 	if resp.StatusCode != http.StatusOK {
-		er := new(rawError)
-		json.Unmarshal(read, er)
-		return nil, errors.New("Error occured: " + er.Error.Message)
+		return nil, parseError(resp.StatusCode, read)
 	}
 	response := &MessageResponse{}
 	err = json.Unmarshal(read, response)
@@ -100,9 +97,7 @@ func (m *Messenger) SendSenderAction(recipient string, action SenderAction) erro
 		return err
 	}
 	if resp.StatusCode != http.StatusOK {
-		er := new(rawError)
-		json.Unmarshal(read, er)
-		return errors.New("Error occured: " + er.Error.Message)
+		return parseError(resp.StatusCode, read)
 	}
 	return nil
 }

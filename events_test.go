@@ -7,8 +7,12 @@ package main
 
 import (
 	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"reflect"
+	"strings"
 	"testing"
+	"time"
 )
 
 func TestEventUnmarshalJSON(t *testing.T) {
@@ -26,5 +30,46 @@ func TestEventUnmarshalJSON(t *testing.T) {
 	}
 	if !reflect.DeepEqual(*postbackEvent, *pageEvent) {
 		t.Error("Events do not match")
+	}
+}
+
+func TestHandlerDispatch(t *testing.T) {
+	got := make(chan string, 4)
+	messenger := &Messenger{
+		MessageReceived: func(Event, MessageOpts, ReceivedMessage) { got <- "received" },
+		MessageEcho:     func(Event, MessageOpts, ReceivedMessage) { got <- "echo" },
+		MessageRead:     func(Event, MessageOpts, Read) { got <- "read" },
+		Authentication:  func(Event, MessageOpts, *Optin) { got <- "auth" },
+	}
+	body := `{"object":"page","entry":[{"id":"1","time":1,"messaging":[
+		{"sender":{"id":"u"},"message":{"mid":"a","text":"hi"}},
+		{"sender":{"id":"p"},"message":{"mid":"b","text":"hi","is_echo":true}},
+		{"sender":{"id":"u"},"read":{"watermark":5}},
+		{"sender":{"id":"u"},"unknown":{}}
+	]}]}`
+	response := httptest.NewRecorder()
+	messenger.Handler(response, httptest.NewRequest(http.MethodPost, "/webhook", strings.NewReader(body)))
+	if response.Code != http.StatusOK {
+		t.Fatalf("status = %d", response.Code)
+	}
+
+	seen := map[string]int{}
+	timeout := time.After(time.Second)
+	for i := 0; i < 3; i++ {
+		select {
+		case name := <-got:
+			seen[name]++
+		case <-timeout:
+			t.Fatalf("timed out, seen %v", seen)
+		}
+	}
+	time.Sleep(50 * time.Millisecond)
+	select {
+	case name := <-got:
+		t.Errorf("unexpected extra handler call %q (unknown events must not reach Authentication)", name)
+	default:
+	}
+	if seen["received"] != 1 || seen["echo"] != 1 || seen["read"] != 1 {
+		t.Errorf("seen = %v, want one each of received/echo/read", seen)
 	}
 }
