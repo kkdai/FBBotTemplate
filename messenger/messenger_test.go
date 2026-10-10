@@ -1,4 +1,4 @@
-package main
+package messenger
 
 import (
 	"context"
@@ -123,5 +123,22 @@ func TestDoRequestTimeout(t *testing.T) {
 	}
 	if httpTimeout <= 0 {
 		t.Error("default client must have a timeout")
+	}
+}
+
+func TestSetGraphAPIVersion(t *testing.T) {
+	orig := graphAPIVersion
+	defer func() { graphAPIVersion = orig }()
+
+	if graphAPIVersion != "v26.0" {
+		t.Errorf("default = %q, want v26.0", graphAPIVersion)
+	}
+	for _, v := range []string{"26.0", "v26", "v26.0/../x", ""} {
+		if err := SetGraphAPIVersion(v); err == nil {
+			t.Errorf("%q should be rejected", v)
+		}
+	}
+	if err := SetGraphAPIVersion("v25.0"); err != nil || graphAPIVersion != "v25.0" {
+		t.Errorf("v25.0: err=%v version=%q", err, graphAPIVersion)
 	}
 }

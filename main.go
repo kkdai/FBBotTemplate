@@ -17,12 +17,11 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"regexp"
+
+	"github.com/kkdai/FBBotTemplate/messenger"
 )
 
-var graphVersionPattern = regexp.MustCompile(`^v\d+\.\d+$`)
-
-var mess = &Messenger{}
+var mess = &messenger.Messenger{}
 
 func main() {
 	port := os.Getenv("PORT")
@@ -42,19 +41,18 @@ func main() {
 		}
 	}
 	if v := os.Getenv("GRAPH_API_VERSION"); v != "" {
-		if !graphVersionPattern.MatchString(v) {
-			log.Fatalf("GRAPH_API_VERSION %q is invalid, expected something like v26.0", v)
+		if err := messenger.SetGraphAPIVersion(v); err != nil {
+			log.Fatalf("GRAPH_API_VERSION: %v", err)
 		}
-		graphAPIVersion = v
 	}
-	log.Println("Server start in port:", port, "graph api:", graphAPIVersion)
+	log.Println("Server start in port:", port)
 	mess.MessageReceived = MessageReceived
 	http.HandleFunc("/webhook", mess.Handler)
 	log.Fatal(http.ListenAndServe(":"+port, nil))
 }
 
 // MessageReceived :Callback to handle when message received.
-func MessageReceived(event Event, opts MessageOpts, msg ReceivedMessage) {
+func MessageReceived(event messenger.Event, opts messenger.MessageOpts, msg messenger.ReceivedMessage) {
 	// log.Println("event:", event, " opt:", opts, " msg:", msg)
 	profile, err := mess.GetProfile(opts.Sender.ID)
 	if err != nil {
