@@ -1,9 +1,4 @@
-// ADDED BY DROP - https://github.com/matryer/drop (v0.6)
-//  source: github.com/maciekmm/messenger-platform-go-sdk (ca9227b956ad50bc8b6225a464f6c0146887f7c5)
-//  update: drop -f github.com/maciekmm/messenger-platform-go-sdk
-// license: The MIT License (MIT) (see repo for details)
-
-package main
+package messenger
 
 import (
 	"context"
@@ -12,17 +7,32 @@ import (
 	"crypto/subtle"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"regexp"
 	"runtime/debug"
 	"strings"
 	"time"
 )
 
 // graphAPIVersion is the Graph API version used for all requests.
-// main.go lets it be overridden with the GRAPH_API_VERSION environment variable.
+// SetGraphAPIVersion overrides it (main.go does so from GRAPH_API_VERSION).
 var graphAPIVersion = "v26.0"
+
+var graphVersionPattern = regexp.MustCompile(`^v\d+\.\d+$`)
+
+// SetGraphAPIVersion selects the Graph API version used for all requests, e.g. "v26.0".
+// It validates the format so the value can't alter the request path. Call it at startup,
+// before sending any requests; it is not safe for concurrent use with them.
+func SetGraphAPIVersion(version string) error {
+	if !graphVersionPattern.MatchString(version) {
+		return fmt.Errorf("invalid Graph API version %q, expected something like v26.0", version)
+	}
+	graphAPIVersion = version
+	return nil
+}
 
 var (
 	//GraphAPI specifies host used for API requests

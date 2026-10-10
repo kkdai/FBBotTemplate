@@ -108,6 +108,7 @@ In Messenger application review, press "Request Premission".
 - Fork code here
 - Add remote repo `https://git.heroku.com/APP_ADDRESS.git`
 - Modify code on `main.go` first. especially in `MessageReceived()`.
+- The Messenger client lives in the `messenger/` package (`github.com/kkdai/FBBotTemplate/messenger`); `main.go` only wires it to your bot logic.
 - Commit and push it back to heroku `git push heroku master`.
 
 
